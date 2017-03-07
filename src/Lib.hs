@@ -64,7 +64,7 @@ loadData filepath = decode <$> BL.readFile filepath
 someFunc :: IO ()
 someFunc = do
   employees <- loadData @[Employee] "data/employees.json"
-  proxOuts <- loadData @[Value] "data/proxOut-MC2.json"
+  proxOuts <- loadData @[[ProxOut]] "data/proxOut-MC2.json"
   print $ fmap (take 5) proxOuts
 --  maybeIO (proxOuts) $ mapM_ print
   -- maybeIO (loadEmployees eFile) $ mapM_ print
