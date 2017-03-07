@@ -22,11 +22,13 @@ messageKeys file = do
   mems <- dt ^? nth 0 . key "message" <&> (^@.. members)
   return $ fmap fst mems
 
+maybeIO ma f = maybe (print "Nothing") f $ ma
+
 someFunc :: IO ()
 someFunc = do
+  print "Reading data..."
   file <- BL.readFile "data/floor1-MC2.json"
-  maybe (print "Nothing") (mapM_ print) $ messageKeys file
-
+  maybeIO (messageKeys file) $ mapM_ print
 
 
 
