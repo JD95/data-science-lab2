@@ -14,6 +14,7 @@ import GHC.Generics
 import Control.Lens
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Lazy as HM
+import qualified Data.Hashable as H
 import qualified Data.Vector as V
 import qualified Data.Text as T
 import Control.Monad.Trans.Maybe
@@ -21,6 +22,8 @@ import Control.Monad.IO.Class
 import Control.Monad
 import Data.Aeson.Encode.Pretty
 import Data.Time.Clock
+import Data.List
+import Data.Monoid
 
 data Employee = Employee { lastName :: String
                          , firstName :: String
@@ -51,22 +54,28 @@ data ProxOut = ProxOut { message :: ProxMessage
 liftMaybe :: (MonadPlus m) => Maybe a -> m a
 liftMaybe = maybe mzero return
 
-messageKeys file = do 
-  dt <- decode file :: Maybe Value
-  mems <- dt ^? nth 0 . key "message" <&> (^@.. members)
-  return $ fmap fst mems
+loadFloorData path = do
+  file <- BL.readFile path
+  let extractMessages dt = dt ^.. _Array . each . key "message" . _Object
+  let messages = extractMessages <$> decode @Value file
+  return (fmap mergeHashMap messages)
 
 maybeIO ma f = maybe (print "Nothing") f $ ma
 
 loadData :: FromJSON a => String -> IO (Maybe a)
 loadData filepath = decode <$> BL.readFile filepath
 
+mergeHashMap :: (Eq k, H.Hashable k) => [HM.HashMap k v] -> HM.HashMap k [v]
+mergeHashMap = foldl' (HM.unionWith (++)) mempty . fmap (HM.map (:[]))
+
 someFunc :: IO ()
 someFunc = do
+  floor1 <- loadFloorData "data/floor1-MC2.json"
   employees <- loadData @[Employee] "data/employees.json"
   proxOuts <- loadData @[[ProxOut]] "data/proxOut-MC2.json"
-  print $ fmap (take 5) proxOuts
---  maybeIO (proxOuts) $ mapM_ print
-  -- maybeIO (loadEmployees eFile) $ mapM_ print
+  -- I need to generalize this to all of the keys
+  maybeIO (floor1) $ mapM_ (appendFile "output.txt" . show)
+                   . HM.lookup "F_1_Z_7: Thermostat Cooling Setpoint"
+ 
 
     
