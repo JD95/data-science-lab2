@@ -27,6 +27,8 @@ library
                      , transformers
                      , aeson-pretty
                      , time
+                     , hashable
+                     , directory
   default-language:    Haskell2010
 
 executable data-science-lab2-exe
